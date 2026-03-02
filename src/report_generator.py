@@ -250,9 +250,8 @@ if __name__ == "__main__":
         "poem": {
             "title": "春晓",
             "author": "孟浩然",
-            "dynasty": "唐代",
             "content": "春眠不觉晓，\n处处闻啼鸟。\n夜来风雨声，\n花落知多少。",
-            "full_title": "《春晓》—— 唐代·孟浩然",
+            "full_title": "《春晓》—— 孟浩然",
         },
     }
 

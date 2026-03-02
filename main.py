@@ -135,9 +135,8 @@ def collect_data(config) -> dict:
         data["poem"] = {
             "title": "静夜思",
             "author": "李白",
-            "dynasty": "唐代",
             "content": "床前明月光，\n疑是地上霜。\n举头望明月，\n低头思故乡。",
-            "full_title": "《静夜思》—— 唐代·李白",
+            "full_title": "《静夜思》—— 李白",
         }
 
     logger.info("数据收集完成！")

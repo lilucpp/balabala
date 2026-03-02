@@ -15,7 +15,6 @@ class Poem:
 
     title: str
     author: str
-    dynasty: str
     content: str
 
     @property
@@ -76,9 +75,8 @@ class PoemFetcher:
             poem_data = data.get("data", {})
 
             poem = Poem(
-                title=poem_data.get("title", ""),
+                title=poem_data.get("origin", ""),
                 author=poem_data.get("author", ""),
-                dynasty=poem_data.get("dynasty", ""),
                 content=poem_data.get("content", ""),
             )
 
@@ -105,17 +103,15 @@ class PoemFetcher:
             return {
                 "title": "静夜思",
                 "author": "李白",
-                "dynasty": "唐代",
                 "content": "床前明月光，\n疑是地上霜。\n举头望明月，\n低头思故乡。",
-                "full_title": "《静夜思》—— 唐代·李白",
+                "full_title": "《静夜思》—— 李白",
             }
 
         return {
             "title": poem.title,
             "author": poem.author,
-            "dynasty": poem.dynasty,
             "content": poem.formatted_content,
-            "full_title": f"《{poem.title}》—— {poem.dynasty}·{poem.author}",
+            "full_title": f"《{poem.title}》—— {poem.author}",
         }
 
 
