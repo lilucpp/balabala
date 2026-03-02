@@ -1,0 +1,14 @@
+[Unit]
+Description=balabala每日报告生成器
+After=network.target
+
+[Service]
+Type=oneshot
+User=%I
+WorkingDirectory=/path/to/balabala
+ExecStart=/usr/bin/python3 /path/to/balabala/main.py
+StandardOutput=append:/path/to/balabala/logs/systemd.log
+StandardError=append:/path/to/balabala/logs/systemd-error.log
+
+[Install]
+WantedBy=multi-user.target

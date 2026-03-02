@@ -1,0 +1,33 @@
+# balabala 配置文件（非敏感信息）
+# 敏感信息（Token、密码等）请使用 .env 文件或环境变量
+# 优先级：环境变量 > .env文件 > 本配置文件
+
+# 报告配置
+report:
+  # 报告生成时间（24小时制）
+  time: "08:00"
+  # 时区
+  timezone: "Asia/Shanghai"
+  # 是否包含个人信息（年龄计算）
+  show_personal_info: true
+  # 出生年份（用于计算历史事件时的年龄）
+  birth_year: 1989
+
+# 注意：ALAPI Token、Telegram Bot Token、Garmin账号密码
+# 请通过以下方式之一配置（按优先级排序）：
+#
+# 方式1：环境变量（推荐用于服务器）
+#   export ALAPI_TOKEN=your_token
+#   export TELEGRAM_BOT_TOKEN=your_token
+#   export TELEGRAM_CHAT_ID=your_chat_id
+#   export GARMIN_USERNAME=your_email
+#   export GARMIN_PASSWORD=your_password
+#   export GARMIN_REGION=CN
+#
+# 方式2：.env 文件（推荐用于本地开发）
+#   1. 复制 .env.example 为 .env
+#   2. 编辑 .env 文件填写你的信息
+#   3. .env 文件已加入 .gitignore，不会被提交
+#
+# 方式3：config.yaml（不推荐，存在安全风险）
+#   虽然支持，但敏感信息明文存储在此文件中存在泄露风险
