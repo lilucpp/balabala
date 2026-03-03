@@ -141,11 +141,17 @@ class ReportGenerator:
         # 跑步数据
         lines.append(f"\n🏃 运动记录：\n")
         if running["today_distance"] > 0:
-            lines.append(f"• 今天跑了 {running['today_distance']} 公里\n")
+            lines.append(
+                f"• 今天跑了 {self._escape_telegram_md(str(running['today_distance']))} 公里\n"
+            )
         else:
             lines.append("• 今天还没跑\n")
-        lines.append(f"• 本月跑了 {running['month_distance']} 公里\n")
-        lines.append(f"• 今年跑了 {running['year_distance']} 公里\n")
+        lines.append(
+            f"• 本月跑了 {self._escape_telegram_md(str(running['month_distance']))} 公里\n"
+        )
+        lines.append(
+            f"• 今年跑了 {self._escape_telegram_md(str(running['year_distance']))} 公里\n"
+        )
 
         # 历史上的今天
         lines.append(f"\n📚 历史上的今天：\n")

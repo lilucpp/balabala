@@ -3,66 +3,66 @@
 
 <#
 .SYNOPSIS
-    为balabala创建Windows定时任务
+    Create Windows scheduled task for balabala
 
 .DESCRIPTION
-    在Windows任务计划程序中创建一个每天运行的定时任务
+    Create a daily scheduled task in Windows Task Scheduler
 #>
 
 $taskName = "balabala-daily-report"
-$taskDescription = "balabala每日报告生成器 - 每天自动发送早安报告"
+$taskDescription = "balabala Daily Report Generator - Automatically send morning reports"
 
-# 获取项目路径
+# Get project path
 $projectPath = (Get-Location).Path
 $pythonPath = (Get-Command python).Source
 $mainScript = Join-Path $projectPath "main.py"
 
-Write-Host "正在为balabala创建定时任务..." -ForegroundColor Green
-Write-Host "项目路径: $projectPath" -ForegroundColor Cyan
-Write-Host "Python路径: $pythonPath" -ForegroundColor Cyan
+Write-Host "Creating scheduled task for balabala..." -ForegroundColor Green
+Write-Host "Project path: $projectPath" -ForegroundColor Cyan
+Write-Host "Python path: $pythonPath" -ForegroundColor Cyan
 
-# 创建触发器（每天7:00）
+# Create trigger (daily at 7:00 AM)
 $trigger = New-ScheduledTaskTrigger -Daily -At "07:00"
 
-# 创建操作
+# Create action
 $action = New-ScheduledTaskAction `
     -Execute $pythonPath `
     -Argument $mainScript `
     -WorkingDirectory $projectPath
 
-# 创建设置
+# Create settings
 $settings = New-ScheduledTaskSettingsSet `
     -AllowStartIfOnBatteries `
     -DontStopIfGoingOnBatteries `
     -StartWhenAvailable `
     -RunOnlyIfNetworkAvailable
 
-# 创建任务对象
+# Create task object
 $task = New-ScheduledTask `
     -Action $action `
     -Trigger $trigger `
     -Settings $settings `
     -Description $taskDescription
 
-# 注册任务
-# 尝试删除已存在的任务
+# Register task
+# Try to delete existing task first
 $existingTask = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
 if ($existingTask) {
-    Write-Host "删除已存在的任务..." -ForegroundColor Yellow
+    Write-Host "Deleting existing task..." -ForegroundColor Yellow
     Unregister-ScheduledTask -TaskName $taskName -Confirm:$false
 }
 
-# 注册新任务
+# Register new task
 Register-ScheduledTask `
     -TaskName $taskName `
     -InputObject $task `
     -Force
 
-Write-Host "`n✅ 定时任务创建成功！" -ForegroundColor Green
-Write-Host "任务名称: $taskName" -ForegroundColor Cyan
-Write-Host "运行时间: 每天 07:00" -ForegroundColor Cyan
-Write-Host "`n你可以通过以下命令管理任务：" -ForegroundColor Yellow
-Write-Host "  查看任务: Get-ScheduledTask -TaskName '$taskName'" -ForegroundColor Gray
-Write-Host "  立即运行: Start-ScheduledTask -TaskName '$taskName'" -ForegroundColor Gray
-Write-Host "  停止任务: Stop-ScheduledTask -TaskName '$taskName'" -ForegroundColor Gray
-Write-Host "  删除任务: Unregister-ScheduledTask -TaskName '$taskName'" -ForegroundColor Gray
+Write-Host "`n[OK] Scheduled task created successfully!" -ForegroundColor Green
+Write-Host "Task name: $taskName" -ForegroundColor Cyan
+Write-Host "Run time: Daily at 07:00" -ForegroundColor Cyan
+Write-Host "`nYou can manage the task with these commands:" -ForegroundColor Yellow
+Write-Host "  View task: Get-ScheduledTask -TaskName '$taskName'" -ForegroundColor Gray
+Write-Host "  Run now: Start-ScheduledTask -TaskName '$taskName'" -ForegroundColor Gray
+Write-Host "  Stop task: Stop-ScheduledTask -TaskName '$taskName'" -ForegroundColor Gray
+Write-Host "  Delete task: Unregister-ScheduledTask -TaskName '$taskName'" -ForegroundColor Gray

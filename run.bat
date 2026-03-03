@@ -32,7 +32,6 @@ python main.py
 if errorlevel 1 (
     echo.
     echo [错误] 程序运行失败，请检查日志: logs\balabala.log
-    pause
     exit /b 1
 ) else (
     echo.

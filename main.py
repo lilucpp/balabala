@@ -20,7 +20,7 @@ from telegram_sender import send_daily_report
 from fetchers.leetcode import get_daily_question
 from fetchers.history_today import get_today_history
 from fetchers.poem import get_daily_poem
-from fetchers.garmin import get_running_data
+from fetchers.garmin import get_garmin_data
 
 
 # 配置日志
@@ -39,19 +39,6 @@ logger.add(
 )
 
 
-def get_wake_up_time() -> str:
-    """获取起床时间（模拟）
-
-    TODO: 后续可以集成智能设备自动获取
-
-    Returns:
-        起床时间字符串
-    """
-    # 当前时间作为起床时间（实际使用中应该从睡眠追踪设备获取）
-    now = datetime.now()
-    return now.strftime("%Y-%m-%d %H:%M:%S")
-
-
 def collect_data(config) -> dict:
     """收集所有数据
 
@@ -65,7 +52,7 @@ def collect_data(config) -> dict:
 
     data = {
         "date": datetime.now().strftime("%Y年%m月%d日"),
-        "wake_up_time": get_wake_up_time(),
+        "wake_up_time": None,  # 稍后从Garmin获取
     }
 
     # 1. 获取LeetCode题目
@@ -86,14 +73,34 @@ def collect_data(config) -> dict:
             "link": "https://leetcode.cn/",
         }
 
-    # 2. 获取跑步数据
+    # 2. 获取Garmin数据（跑步+睡眠）
     try:
-        logger.info("获取Garmin跑步数据...")
-        running = get_running_data(
+        logger.info("获取Garmin数据...")
+        garmin_data = get_garmin_data(
             config.garmin.username, config.garmin.password, config.garmin.region
         )
-        data["running"] = running
-        logger.info(f"获取成功: 本月{running['month_distance']}公里")
+
+        # 提取跑步数据
+        data["running"] = {
+            "today_distance": garmin_data["today_distance"],
+            "month_distance": garmin_data["month_distance"],
+            "year_distance": garmin_data["year_distance"],
+            "last_run_date": garmin_data["last_run_date"],
+            "last_run_distance": garmin_data["last_run_distance"],
+            "day_of_year": garmin_data["day_of_year"],
+            "year_progress": garmin_data["year_progress"],
+            "progress_bar": garmin_data["progress_bar"],
+        }
+
+        # 提取起床时间
+        wake_up_time = garmin_data.get("wake_up_time")
+        if wake_up_time:
+            data["wake_up_time"] = wake_up_time
+            logger.info(f"从Garmin获取到起床时间: {wake_up_time}")
+        else:
+            logger.warning("Garmin中没有找到起床时间数据")
+
+        logger.info(f"获取成功: 本月{garmin_data['month_distance']}公里")
     except Exception as e:
         logger.error(f"获取Garmin数据失败: {e}")
         # 使用默认数据
@@ -138,6 +145,11 @@ def collect_data(config) -> dict:
             "content": "床前明月光，\n疑是地上霜。\n举头望明月，\n低头思故乡。",
             "full_title": "《静夜思》—— 李白",
         }
+
+    # 如果仍然没有获取到起床时间，使用默认值
+    if not data.get("wake_up_time"):
+        data["wake_up_time"] = "07:00"  # 默认起床时间
+        logger.info(f"使用默认起床时间: {data['wake_up_time']}")
 
     logger.info("数据收集完成！")
     return data
