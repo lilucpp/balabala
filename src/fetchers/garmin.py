@@ -1,6 +1,6 @@
 """Garmin 数据获取模块
 
-通过garminconnect库获取运动数据
+通过garminconnect库获取全天运动数据（步数、里程、睡眠）
 """
 
 from datetime import datetime, date, timedelta
@@ -18,13 +18,16 @@ except ImportError:
 
 @dataclass
 class RunningStats:
-    """跑步统计数据"""
+    """运动统计数据"""
 
-    today_distance: float  # 今日距离（公里）
-    month_distance: float  # 本月距离（公里）
-    year_distance: float  # 今年距离（公里）
-    last_run_date: Optional[str] = None  # 上次跑步日期
-    last_run_distance: float = 0.0  # 上次跑步距离
+    today_distance: float       # 今日全天总距离（公里）
+    today_steps: int           # 今日总步数
+    yesterday_distance: float   # 昨日全天总距离（公里）
+    yesterday_steps: int        # 昨日总步数
+    month_distance: float       # 本月累计全天总距离（公里）
+    year_distance: float        # 今年累计全天总距离（公里）
+    last_run_date: Optional[str] = None
+    last_run_distance: float = 0.0
 
 
 @dataclass
@@ -52,19 +55,13 @@ class GarminFetcher:
         """登录Garmin Connect"""
         try:
             logger.info(f"正在登录Garmin Connect ({self.region}区)...")
-            self.client = Garmin(self.username, self.password, is_cn=True)
+            is_cn = (self.region == "CN")
+            self.client = Garmin(self.username, self.password, is_cn=is_cn)
             self.client.login()
             logger.info(f"Garmin Connect ({self.region}区) 登录成功")
             return True
         except Exception as e:
             logger.error(f"Garmin Connect登录失败: {e}")
-            if "401" in str(e):
-                logger.error("提示：请确保：")
-                logger.error(
-                    "  1. 账号密码正确（可在 https://connect.garmin.cn/ 登录验证）"
-                )
-                logger.error("  2. 如果开启了两步验证(2FA)，请暂时关闭")
-                logger.error("  3. 网络可以正常访问Garmin中国服务器")
             return False
 
     def get_activities(self, start: int = 0, limit: int = 10) -> List[Dict[str, Any]]:
@@ -80,73 +77,83 @@ class GarminFetcher:
             return []
 
     def get_running_stats(self) -> RunningStats:
-        """获取跑步统计数据"""
+        """获取全天运动统计数据 (包含步数和里程)"""
         if self.client is None:
             if not self.login():
-                return RunningStats(0, 0, 0)
+                return RunningStats(0, 0, 0, 0, 0, 0)
 
         try:
             today = date.today()
+            yesterday = today - timedelta(days=1)
+            
+            # 1. 获取今日汇总数据
             today_str = today.strftime("%Y-%m-%d")
-
-            # 获取今日统计数据
             today_stats = self.client.get_stats(today_str)
-            today_distance = today_stats.get("totalDistanceMeters", 0) / 1000
+            today_steps = today_stats.get("totalSteps", 0) or 0
+            today_dist = (today_stats.get("totalDistanceMeters", 0) or 0) / 1000.0
 
-            # 获取本月数据
-            month_start = today.replace(day=1)
-            month_activities = self._get_activities_in_range(month_start, today)
-            month_distance = sum(
-                act.get("distance", 0) / 1000
-                for act in month_activities
-                if act.get("activityType", {}).get("typeKey") == "running"
-            )
+            # 2. 获取昨日汇总数据
+            yesterday_str = yesterday.strftime("%Y-%m-%d")
+            yesterday_stats = self.client.get_stats(yesterday_str)
+            yesterday_steps = yesterday_stats.get("totalSteps", 0) or 0
+            yesterday_dist = (yesterday_stats.get("totalDistanceMeters", 0) or 0) / 1000.0
 
-            # 获取今年数据
-            year_start = today.replace(month=1, day=1)
-            year_activities = self._get_activities_in_range(year_start, today)
-            year_distance = sum(
-                act.get("distance", 0) / 1000
-                for act in year_activities
-                if act.get("activityType", {}).get("typeKey") == "running"
-            )
-
-            # 获取上次跑步信息（从所有活动中查找最近的跑步）
+            # 3. 获取活动列表以查找“上次跑步”和“累计活动里程”
+            activities = self.get_activities(0, 500)
+            
             last_run_date = None
             last_run_distance = 0.0
-            all_activities = self._get_activities_in_range(
-                today - timedelta(days=365), today
-            )
-            for act in all_activities:
-                if act.get("activityType", {}).get("typeKey") == "running":
-                    activity_date_str = act.get("startTimeLocal", "")
-                    if activity_date_str:
-                        try:
-                            activity_date = datetime.strptime(
-                                activity_date_str, "%Y-%m-%d %H:%M:%S"
-                            ).date()
-                            if activity_date != today:
-                                last_run_date = activity_date_str
-                                last_run_distance = act.get("distance", 0) / 1000
-                                break
-                        except ValueError:
-                            continue
+            
+            month_start = today.replace(day=1)
+            year_start = today.replace(month=1, day=1)
+            
+            month_act_dist = 0.0
+            year_act_dist = 0.0
+            
+            for act in activities:
+                start_time = act.get("startTimeLocal", "")
+                if not start_time: continue
+                
+                try:
+                    act_date = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S").date()
+                    dist_km = (act.get("distance", 0) or 0) / 1000.0
+                    
+                    # 统计所有运动累计 (跑步、步行、骑行等)
+                    if act_date >= month_start:
+                        month_act_dist += dist_km
+                    if act_date >= year_start:
+                        year_act_dist += dist_km
+                        
+                    # 专门记录“上次跑步”
+                    if act_date < today and last_run_date is None:
+                        if "running" in act.get("activityType", {}).get("typeKey", "").lower():
+                            last_run_date = act_date.strftime("%Y-%m-%d")
+                            last_run_distance = dist_km
+                except:
+                    continue
+
+            # 4. 汇总统计：取今日全天里程与正式活动累计中的较大值
+            final_month_dist = max(month_act_dist, today_dist)
+            final_year_dist = max(year_act_dist, today_dist)
 
             logger.info(
-                f"跑步统计: 今日{today_distance:.2f}km, 本月{month_distance:.2f}km, 本年{year_distance:.2f}km"
+                f"运动汇总: 今日{today_steps}步/{today_dist:.2f}km, 昨日{yesterday_steps}步/{yesterday_dist:.2f}km"
             )
 
             return RunningStats(
-                today_distance=round(today_distance, 2),
-                month_distance=round(month_distance, 2),
-                year_distance=round(year_distance, 2),
+                today_distance=round(today_dist, 2),
+                today_steps=today_steps,
+                yesterday_distance=round(yesterday_dist, 2),
+                yesterday_steps=yesterday_steps,
+                month_distance=round(final_month_dist, 2),
+                year_distance=round(final_year_dist, 2),
                 last_run_date=last_run_date,
-                last_run_distance=round(last_run_distance, 2),
+                last_run_distance=round(last_run_distance, 2)
             )
 
         except Exception as e:
-            logger.error(f"获取跑步统计数据失败: {e}")
-            return RunningStats(0, 0, 0)
+            logger.error(f"获取运动统计数据失败: {e}")
+            return RunningStats(0, 0, 0, 0, 0, 0)
 
     def get_sleep_data(self, target_date: Optional[date] = None) -> SleepData:
         """获取睡眠数据"""
@@ -159,102 +166,40 @@ class GarminFetcher:
                 target_date = date.today()
 
             date_str = target_date.strftime("%Y-%m-%d")
-            logger.info(f"获取 {date_str} 的睡眠数据...")
-
-            # 使用 get_activities_fordate 获取当天数据（包含睡眠）
             day_data = self.client.get_activities_fordate(date_str)
 
             if not day_data:
-                logger.warning(f"未找到 {date_str} 的数据")
                 return SleepData()
 
-            # 从 SleepTimes 获取睡眠起止时间
             sleep_times = day_data.get("SleepTimes", {})
-            sleep_end_timestamp = sleep_times.get("currentDaySleepEndTimeGMT")
-            sleep_start_timestamp = sleep_times.get("currentDaySleepStartTimeGMT")
+            sleep_end = sleep_times.get("currentDaySleepEndTimeGMT")
+            sleep_start = sleep_times.get("currentDaySleepStartTimeGMT")
 
-            # 转换时间戳为本地时间
             wake_up_str = None
             sleep_start_str = None
+            duration = 0.0
 
-            if sleep_end_timestamp:
-                try:
-                    wake_up_dt = datetime.fromtimestamp(sleep_end_timestamp / 1000)
-                    wake_up_str = wake_up_dt.strftime("%H:%M")
-                except Exception as e:
-                    logger.warning(f"解析起床时间失败: {e}")
+            if sleep_end:
+                wake_up_str = datetime.fromtimestamp(sleep_end / 1000).strftime("%H:%M")
+            if sleep_start:
+                sleep_start_str = datetime.fromtimestamp(sleep_start / 1000).strftime("%H:%M")
+            if sleep_end and sleep_start:
+                duration = (sleep_end - sleep_start) / 1000 / 3600
 
-            if sleep_start_timestamp:
-                try:
-                    sleep_dt = datetime.fromtimestamp(sleep_start_timestamp / 1000)
-                    sleep_start_str = sleep_dt.strftime("%H:%M")
-                except Exception as e:
-                    logger.warning(f"解析入睡时间失败: {e}")
-
-            # 计算睡眠时长（小时）
-            sleep_duration = 0.0
-            if sleep_end_timestamp and sleep_start_timestamp:
-                sleep_duration = (
-                    (sleep_end_timestamp - sleep_start_timestamp) / 1000 / 3600
-                )
-
-            sleep_info = SleepData(
+            return SleepData(
                 wake_up_time=wake_up_str,
                 sleep_time=sleep_start_str,
-                sleep_duration=round(sleep_duration, 2),
+                sleep_duration=round(duration, 2),
             )
-
-            logger.info(
-                f"睡眠数据: 起床{wake_up_str}, 入睡{sleep_start_str}, 时长{sleep_duration:.1f}小时"
-            )
-            return sleep_info
-
-        except Exception as e:
-            logger.error(f"获取睡眠数据失败: {e}")
+        except:
             return SleepData()
-
-    def _get_activities_in_range(
-        self, start_date: date, end_date: date
-    ) -> List[Dict[str, Any]]:
-        """获取指定日期范围内的活动"""
-        activities = []
-        start = 0
-        batch_size = 100
-
-        while True:
-            batch = self.get_activities(start, batch_size)
-            if not batch:
-                break
-
-            for activity in batch:
-                activity_date_str = activity.get("startTimeLocal", "")
-                if activity_date_str:
-                    try:
-                        activity_date = datetime.strptime(
-                            activity_date_str, "%Y-%m-%d %H:%M:%S"
-                        ).date()
-                        if start_date <= activity_date <= end_date:
-                            activities.append(activity)
-                        elif activity_date < start_date:
-                            return activities
-                    except ValueError:
-                        continue
-
-            start += batch_size
-            if start > 1000:
-                break
-
-        return activities
 
 
 def get_garmin_data(username: str, password: str, region: str = "US") -> Dict[str, Any]:
-    """获取Garmin所有数据（跑步和睡眠）"""
+    """获取Garmin所有数据"""
     fetcher = GarminFetcher(username, password, region)
 
-    # 获取跑步数据
     stats = fetcher.get_running_stats()
-
-    # 获取睡眠数据
     sleep = fetcher.get_sleep_data()
 
     today = date.today()
@@ -262,8 +207,10 @@ def get_garmin_data(username: str, password: str, region: str = "US") -> Dict[st
     year_progress = (day_of_year / 365) * 100
 
     return {
-        # 跑步数据
         "today_distance": stats.today_distance,
+        "today_steps": stats.today_steps,
+        "yesterday_distance": stats.yesterday_distance,
+        "yesterday_steps": stats.yesterday_steps,
         "month_distance": stats.month_distance,
         "year_distance": stats.year_distance,
         "last_run_date": stats.last_run_date or "暂无记录",
@@ -271,7 +218,6 @@ def get_garmin_data(username: str, password: str, region: str = "US") -> Dict[st
         "day_of_year": day_of_year,
         "year_progress": round(year_progress, 1),
         "progress_bar": _generate_progress_bar(year_progress),
-        # 睡眠数据
         "wake_up_time": sleep.wake_up_time,
         "sleep_time": sleep.sleep_time,
         "sleep_duration": sleep.sleep_duration,
@@ -283,21 +229,3 @@ def _generate_progress_bar(percentage: float, length: int = 20) -> str:
     filled = int(length * percentage / 100)
     bar = "█" * filled + "░" * (length - filled)
     return f"{bar} {percentage:.1f}%"
-
-
-if __name__ == "__main__":
-    import os
-
-    username = os.getenv("GARMIN_USERNAME", "your_email@example.com")
-    password = os.getenv("GARMIN_PASSWORD", "your_password")
-
-    try:
-        data = get_garmin_data(username, password)
-        print(f"今日跑步: {data['today_distance']} 公里")
-        print(f"本月累计: {data['month_distance']} 公里")
-        print(f"今年累计: {data['year_distance']} 公里")
-        print(f"起床时间: {data['wake_up_time']}")
-        print(f"入睡时间: {data['sleep_time']}")
-        print(f"睡眠时长: {data['sleep_duration']:.1f} 小时")
-    except Exception as e:
-        logger.error(f"获取失败: {e}")

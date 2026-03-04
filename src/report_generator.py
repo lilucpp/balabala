@@ -67,16 +67,31 @@ class ReportGenerator:
         lines.append(f"**[{leetcode['title']}]({leetcode['link']})**\n")
         lines.append(f"\n[点击做题]({leetcode['link']})\n")
 
+        # 每日一句
+        sentence = data["daily_sentence"]
+        lines.append(f"## 💬 {sentence['caption']}\n")
+        lines.append(f"> {sentence['content']}\n")
+        lines.append(f"> {sentence['note']}\n")
+        if sentence.get("tts"):
+            lines.append(f"\n[🔊 听发音]({sentence['tts']})\n")
+
         # 跑步数据
         lines.append(f"## 🏃 运动记录\n")
 
+        lines.append(f"• 今日步数 {running['today_steps']} 步\n")
+        
         if running["today_distance"] > 0:
-            lines.append(f"• 今天跑了 {running['today_distance']} 公里\n")
+            lines.append(f"• 今日全天 {running['today_distance']} 公里\n")
         else:
-            lines.append("• 今天还没跑\n")
+            lines.append("• 今日还没动\n")
 
-        lines.append(f"• 本月跑了 {running['month_distance']} 公里\n")
-        lines.append(f"• 今年跑了 {running['year_distance']} 公里\n")
+        if running.get("yesterday_distance", 0) > 0:
+            lines.append(
+                f"• 昨日回顾 {running['yesterday_steps']} 步 / {running['yesterday_distance']} 公里\n"
+            )
+        
+        lines.append(f"• 本月累计 {running['month_distance']} 公里\n")
+        lines.append(f"• 今年累计 {running['year_distance']} 公里\n")
 
         # 上次跑步
         if running["last_run_distance"] > 0:
@@ -105,20 +120,16 @@ class ReportGenerator:
         return "".join(lines)
 
     def generate_telegram_message(self, data: Dict[str, Any]) -> str:
-        """生成适合Telegram发送的Markdown消息
-
-        Telegram使用MarkdownV2格式，需要转义特殊字符
-
-        Args:
-            data: 包含所有数据的字典
-
-        Returns:
-            Telegram格式的Markdown文本
-        """
+        """生成适合Telegram发送的Markdown消息"""
         lines = []
 
-        # 标题
-        lines.append(f"🌅 *早安 · {self._escape_telegram_md(data['date'])}*\n")
+        # 每日一句数据
+        sentence = data.get("daily_sentence", {})
+        pic_url = sentence.get("picture", "")
+
+        # 标题 (如果包含图片，利用隐藏链接显示预览)
+        title_prefix = f"[\u200b]({pic_url})" if pic_url else ""
+        lines.append(f"{title_prefix}🌅 *早安 · {self._escape_telegram_md(data['date'])}*\n")
 
         # 起床时间
         lines.append(
@@ -138,19 +149,35 @@ class ReportGenerator:
             f"[{self._escape_telegram_md(leetcode['title'])}]({leetcode['link']})\n"
         )
 
+        # 每日一句
+        if sentence:
+            lines.append(f"\n💬 *{self._escape_telegram_md(sentence.get('caption', '每日一句'))}*\n")
+            lines.append(f"_{self._escape_telegram_md(sentence['content'])}_\n")
+            lines.append(f"{self._escape_telegram_md(sentence['note'])}\n")
+            if sentence.get("tts"):
+                lines.append(f"[🔊 听发音]({sentence['tts']})\n")
+
         # 跑步数据
         lines.append(f"\n🏃 运动记录：\n")
+        lines.append(f"• 今日步数 *{self._escape_telegram_md(str(running['today_steps']))}* 步\n")
+        
         if running["today_distance"] > 0:
             lines.append(
-                f"• 今天跑了 {self._escape_telegram_md(str(running['today_distance']))} 公里\n"
+                f"• 今日全天 *{self._escape_telegram_md(str(running['today_distance']))}* 公里\n"
             )
         else:
-            lines.append("• 今天还没跑\n")
+            lines.append("• 今日还没动\n")
+        
+        if running.get("yesterday_distance", 0) > 0:
+            lines.append(
+                f"• 昨日回顾 {self._escape_telegram_md(str(running['yesterday_steps']))} 步 / {self._escape_telegram_md(str(running['yesterday_distance']))} 公里\n"
+            )
+
         lines.append(
-            f"• 本月跑了 {self._escape_telegram_md(str(running['month_distance']))} 公里\n"
+            f"• 本月累计 {self._escape_telegram_md(str(running['month_distance']))} 公里\n"
         )
         lines.append(
-            f"• 今年跑了 {self._escape_telegram_md(str(running['year_distance']))} 公里\n"
+            f"• 今年累计 {self._escape_telegram_md(str(running['year_distance']))} 公里\n"
         )
 
         # 历史上的今天
@@ -179,6 +206,7 @@ class ReportGenerator:
 
         # 需要转义的字符
         chars_to_escape = [
+            "\\",
             "_",
             "*",
             "[",

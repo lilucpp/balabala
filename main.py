@@ -21,6 +21,7 @@ from fetchers.leetcode import get_daily_question
 from fetchers.history_today import get_today_history
 from fetchers.poem import get_daily_poem
 from fetchers.garmin import get_garmin_data
+from fetchers.daily_sentence import get_daily_sentence
 
 
 # 配置日志
@@ -80,9 +81,12 @@ def collect_data(config) -> dict:
             config.garmin.username, config.garmin.password, config.garmin.region
         )
 
-        # 提取跑步数据
+        # 提取数据
         data["running"] = {
             "today_distance": garmin_data["today_distance"],
+            "today_steps": garmin_data["today_steps"],
+            "yesterday_distance": garmin_data["yesterday_distance"],
+            "yesterday_steps": garmin_data["yesterday_steps"],
             "month_distance": garmin_data["month_distance"],
             "year_distance": garmin_data["year_distance"],
             "last_run_date": garmin_data["last_run_date"],
@@ -144,6 +148,21 @@ def collect_data(config) -> dict:
             "author": "李白",
             "content": "床前明月光，\n疑是地上霜。\n举头望明月，\n低头思故乡。",
             "full_title": "《静夜思》—— 李白",
+        }
+
+    # 5. 获取每日一句
+    try:
+        logger.info("获取每日一句...")
+        sentence = get_daily_sentence()
+        data["daily_sentence"] = sentence
+        logger.info(f"获取成功: {sentence['content'][:20]}...")
+    except Exception as e:
+        logger.error(f"获取每日一句失败: {e}")
+        data["daily_sentence"] = {
+            "content": "Keep on going never give up.",
+            "note": "勇往直前，决不放弃。",
+            "tts": "",
+            "picture": ""
         }
 
     # 如果仍然没有获取到起床时间，使用默认值
