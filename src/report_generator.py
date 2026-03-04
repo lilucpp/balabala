@@ -75,23 +75,33 @@ class ReportGenerator:
         if sentence.get("tts"):
             lines.append(f"\n[🔊 听发音]({sentence['tts']})\n")
 
-        # 跑步数据
+        # 运动记录
+        running = data["running"]
         lines.append(f"## 🏃 运动记录\n")
-
-        lines.append(f"• 今日步数 {running['today_steps']} 步\n")
         
-        if running["today_distance"] > 0:
-            lines.append(f"• 今日全天 {running['today_distance']} 公里\n")
+        # 今日
+        lines.append(f"• 今日步数：{running['today_steps']} 步")
+        if running['today_walk_dist'] > 0:
+            lines.append(f"（约 {running['today_walk_dist']} km）")
+        lines.append("\n")
+        
+        if running['today_exercise_dist'] > 0:
+            lines.append(f"• 今日运动：{running['today_exercise_dist']} km\n")
         else:
-            lines.append("• 今日还没动\n")
+            lines.append("• 今日还没开始正式运动\n")
 
-        if running.get("yesterday_distance", 0) > 0:
-            lines.append(
-                f"• 昨日回顾 {running['yesterday_steps']} 步 / {running['yesterday_distance']} 公里\n"
-            )
+        # 昨日
+        if running['yesterday_steps'] > 0 or running['yesterday_exercise_dist'] > 0:
+            lines.append(f"• 昨日回顾：{running['yesterday_steps']} 步")
+            if running['yesterday_walk_dist'] > 0:
+                lines.append(f" / {running['yesterday_walk_dist']} km")
+            if running['yesterday_exercise_dist'] > 0:
+                lines.append(f" + 运动 {running['yesterday_exercise_dist']} km")
+            lines.append("\n")
         
-        lines.append(f"• 本月累计 {running['month_distance']} 公里\n")
-        lines.append(f"• 今年累计 {running['year_distance']} 公里\n")
+        # 累计
+        lines.append(f"• 本月累计运动：{running['month_exercise_dist']} km\n")
+        lines.append(f"• 今年累计运动：{running['year_exercise_dist']} km\n")
 
         # 上次跑步
         if running["last_run_distance"] > 0:
@@ -157,28 +167,32 @@ class ReportGenerator:
             if sentence.get("tts"):
                 lines.append(f"[🔊 听发音]({sentence['tts']})\n")
 
-        # 跑步数据
-        lines.append(f"\n🏃 运动记录：\n")
-        lines.append(f"• 今日步数 *{self._escape_telegram_md(str(running['today_steps']))}* 步\n")
+        # 运动数据
+        lines.append(f"\n🏃 *运动记录*\n")
         
-        if running["today_distance"] > 0:
-            lines.append(
-                f"• 今日全天 *{self._escape_telegram_md(str(running['today_distance']))}* 公里\n"
-            )
+        # 今日
+        line_today = f"• 今日步数：*{self._escape_telegram_md(str(running['today_steps']))}* 步"
+        if running['today_walk_dist'] > 0:
+            line_today += f" \\(约 {self._escape_telegram_md(str(running['today_walk_dist']))} km\\)"
+        lines.append(line_today + "\n")
+        
+        if running['today_exercise_dist'] > 0:
+            lines.append(f"• 今日运动：*{self._escape_telegram_md(str(running['today_exercise_dist']))}* km\n")
         else:
-            lines.append("• 今日还没动\n")
-        
-        if running.get("yesterday_distance", 0) > 0:
-            lines.append(
-                f"• 昨日回顾 {self._escape_telegram_md(str(running['yesterday_steps']))} 步 / {self._escape_telegram_md(str(running['yesterday_distance']))} 公里\n"
-            )
+            lines.append("• 今日还没开始正式运动\n")
 
-        lines.append(
-            f"• 本月累计 {self._escape_telegram_md(str(running['month_distance']))} 公里\n"
-        )
-        lines.append(
-            f"• 今年累计 {self._escape_telegram_md(str(running['year_distance']))} 公里\n"
-        )
+        # 昨日
+        if running['yesterday_steps'] > 0 or running['yesterday_exercise_dist'] > 0:
+            line_yesterday = f"• 昨日回顾：{self._escape_telegram_md(str(running['yesterday_steps']))} 步"
+            if running['yesterday_walk_dist'] > 0:
+                line_yesterday += f" / {self._escape_telegram_md(str(running['yesterday_walk_dist']))} km"
+            if running['yesterday_exercise_dist'] > 0:
+                line_yesterday += f" \\+ 运动 {self._escape_telegram_md(str(running['yesterday_exercise_dist']))} km"
+            lines.append(line_yesterday + "\n")
+
+        # 累计
+        lines.append(f"• 本月累计运动：{self._escape_telegram_md(str(running['month_exercise_dist']))} km\n")
+        lines.append(f"• 今年累计运动：{self._escape_telegram_md(str(running['year_exercise_dist']))} km\n")
 
         # 历史上的今天
         lines.append(f"\n📚 历史上的今天：\n")

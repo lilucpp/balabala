@@ -74,7 +74,7 @@ def collect_data(config) -> dict:
             "link": "https://leetcode.cn/",
         }
 
-    # 2. 获取Garmin数据（跑步+睡眠）
+    # 2. 获取Garmin数据（运动+睡眠）
     try:
         logger.info("获取Garmin数据...")
         garmin_data = get_garmin_data(
@@ -83,12 +83,14 @@ def collect_data(config) -> dict:
 
         # 提取数据
         data["running"] = {
-            "today_distance": garmin_data["today_distance"],
             "today_steps": garmin_data["today_steps"],
-            "yesterday_distance": garmin_data["yesterday_distance"],
+            "today_walk_dist": garmin_data["today_walk_dist"],
+            "today_exercise_dist": garmin_data["today_exercise_dist"],
             "yesterday_steps": garmin_data["yesterday_steps"],
-            "month_distance": garmin_data["month_distance"],
-            "year_distance": garmin_data["year_distance"],
+            "yesterday_walk_dist": garmin_data["yesterday_walk_dist"],
+            "yesterday_exercise_dist": garmin_data["yesterday_exercise_dist"],
+            "month_exercise_dist": garmin_data["month_exercise_dist"],
+            "year_exercise_dist": garmin_data["year_exercise_dist"],
             "last_run_date": garmin_data["last_run_date"],
             "last_run_distance": garmin_data["last_run_distance"],
             "day_of_year": garmin_data["day_of_year"],
@@ -104,16 +106,21 @@ def collect_data(config) -> dict:
         else:
             logger.warning("Garmin中没有找到起床时间数据")
 
-        logger.info(f"获取成功: 本月{garmin_data['month_distance']}公里")
+        logger.info(f"获取成功: 本月运动{garmin_data['month_exercise_dist']}公里")
     except Exception as e:
         logger.error(f"获取Garmin数据失败: {e}")
         # 使用默认数据
         today = datetime.now()
         day_of_year = today.timetuple().tm_yday
         data["running"] = {
-            "today_distance": 0,
-            "month_distance": 0,
-            "year_distance": 0,
+            "today_steps": 0,
+            "today_walk_dist": 0,
+            "today_exercise_dist": 0,
+            "yesterday_steps": 0,
+            "yesterday_walk_dist": 0,
+            "yesterday_exercise_dist": 0,
+            "month_exercise_dist": 0,
+            "year_exercise_dist": 0,
             "last_run_date": "暂无数据",
             "last_run_distance": 0,
             "day_of_year": day_of_year,
@@ -162,7 +169,8 @@ def collect_data(config) -> dict:
             "content": "Keep on going never give up.",
             "note": "勇往直前，决不放弃。",
             "tts": "",
-            "picture": ""
+            "picture": "",
+            "caption": "每日一句"
         }
 
     # 如果仍然没有获取到起床时间，使用默认值
@@ -213,6 +221,8 @@ def generate_and_send_report(config) -> bool:
 
     except Exception as e:
         logger.error(f"生成或发送报告失败: {e}")
+        import traceback
+        logger.debug(traceback.format_exc())
         return False
 
 
