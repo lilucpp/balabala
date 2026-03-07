@@ -2,6 +2,8 @@
 
 🌅 每日自动化报告生成器 - 起床时间、LeetCode、运动数据、历史上的今天、每日诗词
 
+![效果图](./data/1.png)
+
 ## ✨ 功能特性
 
 - 📝 **LeetCode每日一题** - 自动获取简单难度题目
@@ -54,16 +56,6 @@ pip install -r requirements.txt
 
 **⚠️ 安全提醒**：敏感信息（Token、密码）**不要**直接写入 `config.yaml`！
 
-#### 快速设置（推荐）
-
-```bash
-# Windows
-setup.bat
-
-# Linux/Mac
-chmod +x setup.sh
-./setup.sh
-```
 
 #### 手动配置
 
