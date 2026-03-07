@@ -1,7 +1,7 @@
 # balabala 开发计划
 
 ## 项目目标
-自动获取每日信息（起床时间、LeetCode题目、运动数据、历史上的今天、诗词），生成Markdown报告并推送到Telegram。
+自动获取每日信息（起床时间、LeetCode题目、运动数据、历史上的今天、诗词、每日一句），生成Markdown报告并推送到Telegram。
 
 ---
 
@@ -13,14 +13,14 @@ balabala/
 ├── 📄 plan.md                   # 本计划文档
 ├── 📄 progress.md               # 进度记录
 ├── 📄 requirements.txt          # Python依赖
-├── 📄 config.yaml.example       # 配置示例（模板）
-├── 📄 config.yaml               # 实际配置（git忽略）
+├── 📄 .env.example              # 环境变量模板
+├── 📄 config.yaml.example       # 配置示例
 │
 ├── 🐍 main.py                   # 程序入口
 │
 ├── 📁 src/
 │   ├── 📄 __init__.py
-│   ├── 🐍 config_loader.py      # 配置加载
+│   ├── 🐍 config_loader.py      # 配置加载 (支持 .env)
 │   ├── 🐍 report_generator.py   # Markdown生成
 │   ├── 🐍 telegram_sender.py    # Telegram发送
 │   │
@@ -29,39 +29,46 @@ balabala/
 │       ├── 🐍 leetcode.py       # LeetCode每日一题
 │       ├── 🐍 history_today.py  # 历史上的今天
 │       ├── 🐍 poem.py           # 每日诗词
-│       └── 🐍 garmin.py         # Garmin运动数据
+│       ├── 🐍 garmin.py         # Garmin运动数据
+│       └── 🐍 daily_sentence.py # 每日一句 (词霸)
 │
-├── 📁 data/                     # 缓存数据（git忽略）
-├── 📁 logs/                     # 日志文件（git忽略）
-└── 📁 .github/
-    └── 📁 workflows/            # CI/CD（可选）
+├── 📁 data/                     # 缓存数据
+├── 📁 logs/                     # 日志文件
+└── 📁 scripts/                  # 部署脚本 (Windows/Linux)
 ```
 
 ---
 
 ## 📋 实施步骤
 
-### Phase 1: 项目初始化
-- [ ] **Step 1**: 创建目录结构
-- [ ] **Step 2**: 初始化Git仓库，创建.gitignore
-- [ ] **Step 3**: 创建requirements.txt（依赖清单）
-- [ ] **Step 4**: 创建config.yaml.example（配置模板）
+### Phase 1: 项目初始化 ✅
+- [x] **Step 1**: 创建目录结构
+- [x] **Step 2**: 初始化Git仓库，创建.gitignore
+- [x] **Step 3**: 创建requirements.txt（依赖清单）
+- [x] **Step 4**: 创建config.yaml.example（配置模板）
 
-### Phase 2: 核心模块开发
-- [ ] **Step 5**: 实现config_loader.py（YAML配置读取）
-- [ ] **Step 6**: 实现leetcode.py（GraphQL API调用）
-- [ ] **Step 7**: 实现history_today.py（ALAPI集成）
-- [ ] **Step 8**: 实现poem.py（ALAPI诗词）
-- [ ] **Step 9**: 实现garmin.py（GarminConnect集成）
+### Phase 2: 核心模块开发 ✅
+- [x] **Step 5**: 实现config_loader.py（YAML & .env 支持）
+- [x] **Step 6**: 实现leetcode.py（GraphQL API调用）
+- [x] **Step 7**: 实现history_today.py（ALAPI集成）
+- [x] **Step 8**: 实现poem.py（ALAPI诗词）
+- [x] **Step 9**: 实现garmin.py（GarminConnect集成）
+- [x] **Step 9b**: 实现daily_sentence.py（金山词霸API）
 
-### Phase 3: 报告与发送
-- [ ] **Step 10**: 实现report_generator.py（Markdown生成）
-- [ ] **Step 11**: 实现telegram_sender.py（Bot消息发送）
+### Phase 3: 报告与发送 ✅
+- [x] **Step 10**: 实现report_generator.py（Markdown生成与转义优化）
+- [x] **Step 11**: 实现telegram_sender.py（Bot消息发送）
 
-### Phase 4: 集成与部署
-- [ ] **Step 12**: 实现main.py（主流程整合）
-- [ ] **Step 13**: 配置定时任务（systemd/cron）
-- [ ] **Step 14**: 完整测试与文档完善
+### Phase 4: 集成与部署 ✅
+- [x] **Step 12**: 实现main.py（主流程整合）
+- [x] **Step 13**: 配置定时任务脚本（systemd/cron/Task Scheduler）
+- [x] **Step 14**: 完整测试与文档完善 (README, Troubleshooting)
+
+### Phase 5: 长期维护与优化 🔄
+- [ ] **Step 15**: 增加更多数据源（如天气预报、热搜榜单）
+- [ ] **Step 16**: 优化报告视觉效果（支持更多HTML标签或图表渲染）
+- [ ] **Step 17**: 增加Web端配置界面（可选）
+- [ ] **Step 18**: 容器化部署支持 (Docker)
 
 ---
 
@@ -73,7 +80,8 @@ balabala/
   - `python-telegram-bot` - Telegram集成
   - `requests` - HTTP API调用
   - `pyyaml` - YAML配置解析
-  - `schedule` - 定时任务（可选）
+  - `python-dotenv` - 环境变量管理
+  - `loguru` - 增强日志记录
 
 ---
 
@@ -84,43 +92,14 @@ balabala/
 | LeetCode | GraphQL API | 无 |
 | 历史上的今天 | ALAPI | Token |
 | 每日诗词 | ALAPI | Token |
+| 每日一句 | 金山词霸 API | 无 |
 | Garmin | garminconnect | 账号密码 |
 | Telegram | python-telegram-bot | Bot Token |
 
 ---
 
-## ⚙️ 用户配置
+## 📅 更新记录
 
-需要准备以下配置：
-
-```yaml
-# config.yaml
-alapi:
-  token: "your_alapi_token"
-
-telegram:
-  bot_token: "your_bot_token"
-  chat_id: "your_chat_id"
-
-garmin:
-  username: "your_garmin_email"
-  password: "your_garmin_password"
-```
-
-**获取方式：**
-- ALAPI Token: https://www.alapi.cn/ 注册
-- Telegram Bot Token: 向 @BotFather 发送 `/newbot`
-- Telegram Chat ID: 向 @userinfobot 发送消息
-- Garmin: 你的Garmin Connect账号
-
----
-
-## 📅 时间表
-
-计划3-5天内完成全部开发。
-
----
-
-## 📝 记录
-
-- **2024-03-02**: 项目启动，创建计划文档
+- **2024-03-02**: 项目启动，完成 Phase 1-3。
+- **2024-03-03**: 完成 Phase 4，发布正式版本。
+- **2026-03-07**: 全面清理文档，补充每日一句功能说明，进入 Phase 5。

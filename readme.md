@@ -10,6 +10,7 @@
 - 🏃 **运动数据** - 从Garmin Connect自动同步跑步数据
 - 📚 **历史上的今天** - 展示历史事件并计算你当时的年龄
 - 📜 **每日诗词** - 随机古诗词，附带完整信息
+- 💬 **每日一句** - 金山词霸每日英语，包含中英对照和发音
 - 📊 **年度进度** - 可视化显示今年已过时间
 - 📱 **Telegram推送** - 自动生成精美报告并推送到Telegram
 
@@ -17,14 +18,21 @@
 
 ```
 balabala/
-├── config.yaml          # 配置文件（需自行创建）
+├── .env                 # 敏感配置文件（需自行创建，git忽略）
+├── .env.example         # 环境变量模板
+├── config.yaml          # 非敏感配置文件（需自行创建，git忽略）
 ├── config.yaml.example  # 配置模板
-├── main.py             # 主程序入口
-├── requirements.txt    # Python依赖
-├── setup.bat          # Windows快速设置脚本
-├── plan.md            # 开发计划
-├── progress.md        # 开发进度
-├── src/               # 源代码目录
+├── main.py              # 主程序入口
+├── requirements.txt     # Python依赖
+├── run.bat              # Windows快速运行脚本
+├── setup.bat            # Windows安装/配置脚本
+├── test_garmin.py       # Garmin登录测试工具
+├── test_config.py       # 配置加载测试工具
+├── plan.md              # 开发计划
+├── progress.md          # 开发进度
+├── TROUBLESHOOTING.md   # 故障排除指南
+├── MIGRATION.md         # 敏感信息配置迁移指南
+├── src/                 # 源代码目录
 │   ├── config_loader.py
 │   ├── report_generator.py
 │   ├── telegram_sender.py
@@ -32,9 +40,10 @@ balabala/
 │       ├── leetcode.py
 │       ├── history_today.py
 │       ├── poem.py
-│       └── garmin.py
-├── data/              # 报告存储目录
-└── logs/              # 日志目录
+│       ├── garmin.py
+│       └── daily_sentence.py
+├── data/                # 报告存储目录
+└── logs/                # 日志目录
 ```
 
 ## 🚀 快速开始
@@ -152,35 +161,41 @@ sudo systemctl start balabala.timer
 
 ## 📊 报告示例
 
-🌅 **早安 · 2024年3月2日**
+[​](https://staticedu-wps-cache.iciba.com/image/d964eff5a013837773e49a5cf4074651.png)  
+🌅 *早安 · 2026年03月07日*  
+今天的起床时间是 *07:44*  
+起床啦！  
 
-今天的起床时间是 **07:30**
-起床啦！
+📅 今天是今年的第 66 天  
 
-📅 今天是今年的第 **62** 天
+███░░░░░░░░░░░░░░░░░ 18\.1%
+
+📝 今日 LeetCode *简单* 难度：  
+[Remove Linked List Elements](https://leetcode.cn/problems/remove-linked-list-elements/)
+
+💬 *词霸每日一句*  
+_The hearth crackles, keeping the late\-night thinker company\._  
+炉火噼啪，陪伴深夜里独思者。  
+[🔊 听发音](https://staticedu-wps-cache.iciba.com/audio/fc1bbfcc6d8279bf118cb80b9a157c77.mp3)
+
+🏃 *运动记录*
+
+• 今日步数：*6388* 步 \(约 5\.33 km\)  
+• 今日运动：*2\.01* km  
+• 昨日回顾：8052 步 / 6\.61 km  
+• 本月累计运动：2\.01 km  
+• 今年累计运动：2\.01 km  
+
+📚 历史上的今天：  
+• *1978年*：高校恢复职称评定  
+• *1916年*：中国科学院院士、原子核医学家王世真诞辰  
+
+📜 今日诗词  
+*《江神子·江景》—— 苏轼*  
 ```
-███░░░░░░░░░░░░░░░░░ 17.0%
+一朵芙蕖，开过尚盈盈。
 ```
 
-📝 今日 LeetCode **简单** 难度：
-**两数之和**
-
-🏃 运动记录：
-- 今天还没跑
-- 本月跑了 69.77 公里
-- 今年跑了 69.77 公里
-
-📚 历史上的今天：
-- **1962年**：周恩来总理提出"知识分子是工人阶级的一部分" （那年我 -27 岁）
-
-📜 今日诗词
-**《春晓》—— 唐代·孟浩然**
-```
-春眠不觉晓，
-处处闻啼鸟。
-夜来风雨声，
-花落知多少。
-```
 
 ## 🔧 技术栈
 
