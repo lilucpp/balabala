@@ -84,9 +84,11 @@ def collect_data(config) -> dict:
         # 提取数据
         data["running"] = {
             "today_steps": garmin_data["today_steps"],
+            "today_total_dist": garmin_data["today_total_dist"],
             "today_walk_dist": garmin_data["today_walk_dist"],
             "today_exercise_dist": garmin_data["today_exercise_dist"],
             "yesterday_steps": garmin_data["yesterday_steps"],
+            "yesterday_total_dist": garmin_data["yesterday_total_dist"],
             "yesterday_walk_dist": garmin_data["yesterday_walk_dist"],
             "yesterday_exercise_dist": garmin_data["yesterday_exercise_dist"],
             "month_exercise_dist": garmin_data["month_exercise_dist"],

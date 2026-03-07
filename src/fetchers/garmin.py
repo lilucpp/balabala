@@ -21,11 +21,13 @@ class RunningStats:
     """运动统计数据"""
     # 今日数据
     today_steps: int            # 今日步数
+    today_total_dist: float     # 今日总里程
     today_walk_dist: float      # 今日走路/日常里程 (总里程 - 运动里程)
     today_exercise_dist: float  # 今日正式运动里程
 
     # 昨日数据
     yesterday_steps: int
+    yesterday_total_dist: float
     yesterday_walk_dist: float
     yesterday_exercise_dist: float
 
@@ -81,7 +83,7 @@ class GarminFetcher:
         """获取运动统计数据 (分离走路和运动)"""
         if self.client is None:
             if not self.login():
-                return RunningStats(0,0,0,0,0,0,0,0)
+                return RunningStats(0,0.0,0.0,0.0,0,0.0,0.0,0.0,0.0,0.0)
 
         try:
             today = date.today()
@@ -144,9 +146,11 @@ class GarminFetcher:
 
             return RunningStats(
                 today_steps=t_steps,
+                today_total_dist=round(t_total_dist, 2),
                 today_walk_dist=round(t_walk_dist, 2),
                 today_exercise_dist=round(today_exercise_dist, 2),
                 yesterday_steps=y_steps,
+                yesterday_total_dist=round(y_total_dist, 2),
                 yesterday_walk_dist=round(y_walk_dist, 2),
                 yesterday_exercise_dist=round(yesterday_exercise_dist, 2),
                 month_exercise_dist=round(month_exercise_dist, 2),
@@ -157,7 +161,7 @@ class GarminFetcher:
 
         except Exception as e:
             logger.error(f"统计失败: {e}")
-            return RunningStats(0,0,0,0,0,0,0,0)
+            return RunningStats(0,0,0,0,0,0,0,0,0,0)
 
     def get_sleep_data(self, target_date: Optional[date] = None) -> SleepData:
         """获取睡眠数据"""
@@ -189,9 +193,11 @@ def get_garmin_data(username: str, password: str, region: str = "US") -> Dict[st
 
     return {
         "today_steps": stats.today_steps,
+        "today_total_dist": stats.today_total_dist,
         "today_walk_dist": stats.today_walk_dist,
         "today_exercise_dist": stats.today_exercise_dist,
         "yesterday_steps": stats.yesterday_steps,
+        "yesterday_total_dist": stats.yesterday_total_dist,
         "yesterday_walk_dist": stats.yesterday_walk_dist,
         "yesterday_exercise_dist": stats.yesterday_exercise_dist,
         "month_exercise_dist": stats.month_exercise_dist,

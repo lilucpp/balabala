@@ -81,8 +81,8 @@ class ReportGenerator:
         
         # 今日
         lines.append(f"• 今日步数：{running['today_steps']} 步")
-        if running['today_walk_dist'] > 0:
-            lines.append(f"（约 {running['today_walk_dist']} km）")
+        if running['today_total_dist'] > 0:
+            lines.append(f"（约 {running['today_total_dist']} km）")
         lines.append("\n")
         
         if running['today_exercise_dist'] > 0:
@@ -93,8 +93,8 @@ class ReportGenerator:
         # 昨日
         if running['yesterday_steps'] > 0 or running['yesterday_exercise_dist'] > 0:
             lines.append(f"• 昨日回顾：{running['yesterday_steps']} 步")
-            if running['yesterday_walk_dist'] > 0:
-                lines.append(f" / {running['yesterday_walk_dist']} km")
+            if running['yesterday_total_dist'] > 0:
+                lines.append(f" / {running['yesterday_total_dist']} km")
             if running['yesterday_exercise_dist'] > 0:
                 lines.append(f" + 运动 {running['yesterday_exercise_dist']} km")
             lines.append("\n")
@@ -172,8 +172,8 @@ class ReportGenerator:
         
         # 今日
         line_today = f"• 今日步数：*{self._escape_telegram_md(str(running['today_steps']))}* 步"
-        if running['today_walk_dist'] > 0:
-            line_today += f" \\(约 {self._escape_telegram_md(str(running['today_walk_dist']))} km\\)"
+        if running['today_total_dist'] > 0:
+            line_today += f" \\(约 {self._escape_telegram_md(str(running['today_total_dist']))} km\\)"
         lines.append(line_today + "\n")
         
         if running['today_exercise_dist'] > 0:
@@ -184,8 +184,8 @@ class ReportGenerator:
         # 昨日
         if running['yesterday_steps'] > 0 or running['yesterday_exercise_dist'] > 0:
             line_yesterday = f"• 昨日回顾：{self._escape_telegram_md(str(running['yesterday_steps']))} 步"
-            if running['yesterday_walk_dist'] > 0:
-                line_yesterday += f" / {self._escape_telegram_md(str(running['yesterday_walk_dist']))} km"
+            if running['yesterday_total_dist'] > 0:
+                line_yesterday += f" / {self._escape_telegram_md(str(running['yesterday_total_dist']))} km"
             if running['yesterday_exercise_dist'] > 0:
                 line_yesterday += f" \\+ 运动 {self._escape_telegram_md(str(running['yesterday_exercise_dist']))} km"
             lines.append(line_yesterday + "\n")
